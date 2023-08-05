@@ -1,6 +1,9 @@
 from db.models import (User, List, Task)
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from rich.console import Console
+from rich.table import Table
+
 
 class Menu:
 
@@ -66,20 +69,26 @@ class app:
             new_user = User(first_name = f_name, last_name = l_name)
             session.add(new_user)
             session.commit()
+            self.selected_user = new_user
+            self.user_menu.loop()
         else:
             print("first and last name must be non-empty strings!")
     
     def fetch_user(self):
 
+        console = Console()
         f_name = input("Enter first name: ")
         l_name = input("Enter last name: ")
         self.selected_user = session.query(User).filter(User.first_name == f_name and User.last_name == l_name).first()
         if (self.selected_user):
-            user_lists = session.query(List).filter(List.user_id == self.selected_user.id)
-            if user_lists:
-                print([li for li in user_lists])
+            table = Table(title = f"{self.selected_user.first_name}")
+            table.add_column("Lists")
+            if self.selected_user.lists:
+                for list in self.selected_user.lists:
+                    table.add_row(f"{list.name}")
             else:
                 print("User has no lists.")
+            console.print(table)
             self.user_menu.loop()
         else:
             print("User not found.")
@@ -90,7 +99,7 @@ class app:
         user_id = int(input("Enter user id to be deleted: "))
         
         if f_name and user_id and type(user_id) == int:
-            delete_user = session.query(User).filter(User.id == user_id and User.first_name == f_name)
+            delete_user = session.query(User).filter(User.id == user_id and User.first_name == f_name).first()
             session.delete(delete_user)
             session.commit()
 
@@ -100,14 +109,14 @@ class app:
 
     def select_list(self):
 
+        print(self.selected_user.lists)
         list_name = input("Select List: ")
         self.selected_list = session.query(List).filter(List.name == list_name).first()
 
         if self.selected_list:
             print(self.selected_list)
-            tasks = session.query(Task).filter(Task.list_id == self.selected_list.id).all()
-            if tasks:
-                print([task for task in tasks])
+            if self.selected_list.tasks:
+                print(self.selected_list.tasks)
             else:
                 print("No tasks in this list")
             self.list_menu.loop()
@@ -126,15 +135,14 @@ class app:
         task_description = input("Enter task: ")
 
         if task_description:
-            new_task = Task(description = task_description, list_id = self.selected_list.id, user_id = self.selected_user.id)
+            new_task = Task(description = task_description, list_id = self.selected_list.id)
             session.add(new_task)
             session.commit()
 
         else:
             print("Task description must be non-empty string!")
-
-
-
+        
+        print(self.selected_list.tasks)
 
 if __name__ == '__main__':
 
