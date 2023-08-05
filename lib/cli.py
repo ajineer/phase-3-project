@@ -42,13 +42,20 @@ class Menu:
             print("You did not enter an integer value.")
             return self.loop()
 
-class app(Menu, Task, List):
+class app:
 
     def __init__(self):
         
         self.selected_user = None
-        self.main_menu = Menu({1: self.make_user, 2: self.fetch_user})
+        self.selected_list = None
+        self.selected_task = None
+        self.main_menu = Menu({1: self.make_user, 2: self.fetch_user, 3: self.delete_user})
         self.user_menu = Menu({1: self.select_list, 2: self.make_list})
+        self.list_menu = Menu({1: self.make_task})
+
+    def run_app(self):
+
+        self.main_menu.loop()
 
     def make_user(self):
 
@@ -68,14 +75,64 @@ class app(Menu, Task, List):
         l_name = input("Enter last name: ")
         self.selected_user = session.query(User).filter(User.first_name == f_name and User.last_name == l_name).first()
         if (self.selected_user):
+            user_lists = session.query(List).filter(List.user_id == self.selected_user.id)
+            if user_lists:
+                print([li for li in user_lists])
+            else:
+                print("User has no lists.")
             self.user_menu.loop()
         else:
             print("User not found.")
 
+    def delete_user(self):
+        
+        f_name = input("Enter user name to be deleted: ")
+        user_id = int(input("Enter user id to be deleted: "))
+        
+        if f_name and user_id and type(user_id) == int:
+            delete_user = session.query(User).filter(User.id == user_id and User.first_name == f_name)
+            session.delete(delete_user)
+            session.commit()
+
+        else: 
+            print("Invalid name or id.")
+
+
     def select_list(self):
 
-        user_lists = session.query(List).filter(List.user_id == self.selected_user.id)
-        print([li for li in user_lists])
+        list_name = input("Select List: ")
+        self.selected_list = session.query(List).filter(List.name == list_name).first()
+
+        if self.selected_list:
+            print(self.selected_list)
+            tasks = session.query(Task).filter(Task.list_id == self.selected_list.id).all()
+            if tasks:
+                print([task for task in tasks])
+            else:
+                print("No tasks in this list")
+            self.list_menu.loop()
+        else:
+            print("List not found")
+
+    def make_list(self):
+        
+        list_name = input("Enter List name: ")
+        new_list = List(name = list_name, user_id = self.selected_user.id)
+        session.add(new_list)
+        session.commit()
+
+    def make_task(self):
+
+        task_description = input("Enter task: ")
+
+        if task_description:
+            new_task = Task(description = task_description, list_id = self.selected_list.id, user_id = self.selected_user.id)
+            session.add(new_task)
+            session.commit()
+
+        else:
+            print("Task description must be non-empty string!")
+
 
 
 
@@ -85,5 +142,7 @@ if __name__ == '__main__':
     Session = sessionmaker(bind=engine)
     session = Session()
         
+    app().run_app()
+    
 
 
