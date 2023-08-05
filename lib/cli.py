@@ -46,9 +46,44 @@ class app(Menu, Task, List):
 
     def __init__(self):
         
+        self.selected_user = None
         self.main_menu = Menu({1: self.make_user, 2: self.fetch_user})
+        self.user_menu = Menu({1: self.select_list, 2: self.make_list})
 
     def make_user(self):
+
+        f_name = input("Enter first name: ")
+        l_name = input("Enter last name: ")
+
+        if f_name and len(f_name) >= 1 and l_name and len(l_name) >= 1:
+            new_user = User(first_name = f_name, last_name = l_name)
+            session.add(new_user)
+            session.commit()
+        else:
+            print("first and last name must be non-empty strings!")
+    
+    def fetch_user(self):
+
+        f_name = input("Enter first name: ")
+        l_name = input("Enter last name: ")
+        self.selected_user = session.query(User).filter(User.first_name == f_name and User.last_name == l_name).first()
+        if (self.selected_user):
+            self.user_menu.loop()
+        else:
+            print("User not found.")
+
+    def select_list(self):
+
+        user_lists = session.query(List).filter(List.user_id == self.selected_user.id)
+        print([li for li in user_lists])
+
+
+
+if __name__ == '__main__':
+
+    engine = create_engine('sqlite:///todo.db')
+    Session = sessionmaker(bind=engine)
+    session = Session()
         
 
 
