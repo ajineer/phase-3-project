@@ -65,14 +65,12 @@ class app:
         f_name = input("Enter first name: ")
         l_name = input("Enter last name: ")
 
-        if f_name and len(f_name) >= 1 and l_name and len(l_name) >= 1:
-            new_user = User(first_name = f_name, last_name = l_name)
-            session.add(new_user)
-            session.commit()
-            self.selected_user = new_user
+        new_user = User(first_name = f_name, last_name = l_name)
+        session.add(new_user)
+        session.commit()
+        self.selected_user = new_user
+        if self.selected_user:
             self.user_menu.loop()
-        else:
-            print("first and last name must be non-empty strings!")
     
     def fetch_user(self):
 
