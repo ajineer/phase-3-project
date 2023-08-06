@@ -1,49 +1,9 @@
-from db.models import (User, List, Task)
+from db.models import (User, List, Task, Menu)
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from rich.console import Console
 from rich.table import Table
 
-
-class Menu:
-
-    def __init__(self, dictionary):
-
-        self.dictionary = dictionary
-        self.choice = 0
-        self.endBound = int(len(self.dictionary)) + 1
-
-    def display(self, index=1):
-        if(index == 1):
-            print(f"\033[33m{'='*6*len(self.dictionary)}\033[0m")
-        print(f"\033[33m{index}:\033[0m {self.dictionary[index].__name__}")
-        if(index == len(self.dictionary)):
-            print(f"\033[33m{self.endBound}:\033[0m Exit")
-            print(f"\033[33m{'='*6*len(self.dictionary)}\033[0m")
-            pass
-        else:
-            return self.display(index+1) 
-        
-    def loop(self):
-        self.display()
-        try:
-            print(f"\033[34m<{'-'*5*len(self.dictionary)}>\033[0m")
-            choice = int(input("Enter choice: "))
-            print(f"\033[34m<{'-'*5*len(self.dictionary)}>\033[0m")
-            if(choice < 1 or choice > self.endBound):
-                print("Choice out of range try again")
-                return self.loop()
-            else:
-                if(choice == self.endBound):
-                    pass
-                else:
-                    print(f"\033[32m<{'-'*5*len(self.dictionary)}>\033[0m")
-                    self.dictionary[choice]()
-                    print(f"\033[32m<{'-'*5*len(self.dictionary)}>\033[0m")
-                    return self.loop()
-        except ValueError:
-            print("You did not enter an integer value.")
-            return self.loop()
 
 class app:
 
@@ -53,8 +13,9 @@ class app:
         self.selected_list = None
         self.selected_task = None
         self.main_menu = Menu({1: self.make_user, 2: self.fetch_user, 3: self.delete_user})
-        self.user_menu = Menu({1: self.select_list, 2: self.make_list})
-        self.list_menu = Menu({1: self.make_task})
+        self.user_menu = Menu({1: self.select_list, 2: self.make_list, 3: self.delete_list})
+        self.list_menu = Menu({1: self.make_task, 2: self.delete_task, 3: self.select_task})
+        self.task_menu = Menu({1: self.change_status, 2: self.change_task_description})
 
     def run_app(self):
 
@@ -79,14 +40,7 @@ class app:
         l_name = input("Enter last name: ")
         self.selected_user = session.query(User).filter(User.first_name == f_name and User.last_name == l_name).first()
         if (self.selected_user):
-            table = Table(title = f"{self.selected_user.first_name}")
-            table.add_column("Lists")
-            if self.selected_user.lists:
-                for list in self.selected_user.lists:
-                    table.add_row(f"{list.name}")
-            else:
-                print("User has no lists.")
-            console.print(table)
+            console.print(self.selected_user.__repr__())
             self.user_menu.loop()
         else:
             print("User not found.")
@@ -107,16 +61,15 @@ class app:
 
     def select_list(self):
 
-        print(self.selected_user.lists)
+        user_console = Console()
+        user_console.print(self.selected_user.__repr__())
+
         list_name = input("Select List: ")
         self.selected_list = session.query(List).filter(List.name == list_name).first()
 
         if self.selected_list:
-            print(self.selected_list)
-            if self.selected_list.tasks:
-                print(self.selected_list.tasks)
-            else:
-                print("No tasks in this list")
+            list_console = Console()
+            list_console.print(self.selected_list.__repr__())
             self.list_menu.loop()
         else:
             print("List not found")
@@ -127,6 +80,17 @@ class app:
         new_list = List(name = list_name, user_id = self.selected_user.id)
         session.add(new_list)
         session.commit()
+        
+    def delete_list(self):
+
+        console = Console()
+        console.print(self.selected_user.__repr__())
+        list_name = input("Enter list to be deleted: ")
+        list_id = int(input("Enter list id: "))
+        delete_list = session.query(List).filter(List.name == list_name and List.id == list_id).first()
+        session.delete(delete_list)
+        session.commit()
+
 
     def make_task(self):
 
@@ -140,7 +104,42 @@ class app:
         else:
             print("Task description must be non-empty string!")
         
-        print(self.selected_list.tasks)
+        console = Console()
+        console.print(self.selected_list.__repr__())
+
+
+    def delete_task(self):
+
+        console = Console()
+        console.print(self.selected_list.__repr__())
+
+        task_id = input("Enter task id to be deleted: ")
+
+        if task_id:
+            delete_task = session.query(Task).filter(Task.id == task_id).first()
+            session.delete(delete_task)
+            session.commit()
+
+    def select_task(self):
+
+        console = Console()
+        console.print(self.selected_list.__repr__())
+
+        task_description = input("Select Task: ")
+        self.selected_task = session.query(Task).filter(Task.description == task_description).first()
+        if self.selected_task:
+            self.task_menu.loop()
+        else:
+            print("Task not found")
+
+    def change_status(self):
+        pass
+
+    def change_task_description(self):
+        pass
+
+
+
 
 if __name__ == '__main__':
 
