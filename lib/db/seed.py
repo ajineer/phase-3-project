@@ -9,10 +9,11 @@ if __name__ == "__main__":
     Session = sessionmaker(bind=engine)
     session = Session()
 
-    c1 = Category(_title = "Personal")
-    c2 = Category(title = "Chores")
-    c3 = Category(title = "Errands")
+    # c1 = Category(_title = "Personal")
+    # c2 = Category(title = "Chores")
+    # c3 = Category(title = "Errands")
 
-    session.bulk_save_objects([c1,c2,c3])
+    # session.bulk_save_objects([c1,c2,c3])
+    session.query(Task).delete()
     session.commit()
     

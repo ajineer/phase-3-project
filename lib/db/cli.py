@@ -72,8 +72,8 @@ class app:
         console.print(self.selected_list.__repr__())
 
     def print_task(self):
-        print(self.selected_task.__repr__())
-        print(f"{cat.title}" for cat in self.selected_task.categories)
+        console = Console()
+        console.print(self.selected_task.__repr__())
 
     def fetch_user(self):
 
@@ -122,7 +122,7 @@ class app:
         session.commit()
         self.selected_user = new_user
         if self.selected_user:
-            self.user_menu.loop(return_function=self.print_user)
+            self.user_menu.loop()
     
     def make_list(self):
         
@@ -132,7 +132,7 @@ class app:
         session.commit()
         self.selected_list = new_list
         if self.selected_list:
-            self.list_menu.loop(return_function=self.print_user)
+            self.list_menu.loop()
 
     def make_category(self):
         
@@ -140,6 +140,7 @@ class app:
         new_cat = Category(title=new_title)
         session.add(new_cat)
         session.commit()
+        self.list_menu.loop()
 
     def make_task(self):
 
@@ -147,16 +148,13 @@ class app:
 
         if task_description:
             new_task = Task(description = task_description, list_id = self.selected_list.id)
-            new_task = Task(description = task_description)
             categories = session.query(Category).all()
         
-            cat_list = [inquirer.List("Categories", message="Select Category", choices = [cat.title for cat in categories])]
+            cat_list = [inquirer.Checkbox("Categories", message="Select Category", choices = [cat.title for cat in categories])]
             answers = inquirer.prompt(cat_list)
             self.selected_category = answers["Categories"]
-            new_task.categories = session.query(Category).filter(Category.title == self.selected_category).all()
-            print(f"look here: {new_task.categories}")
-            
-            
+            print(answers["Categories"])
+            new_task.categories = session.query(Category).filter(Category.title in answers["Categories"]).all()
             session.add(new_task)
             session.commit()
 
@@ -210,7 +208,14 @@ class app:
         self.list_menu.loop()
 
     def change_status(self):
-        pass
+        
+        change_options = [inquirer.List("choices", message="Select incomplete or complete", choices=["Incomplete", "Complete"])]
+        answer = inquirer.prompt(change_options)
+        fetch_task = session.query(Task).filter(Task.id == self.selected_task.id).first()
+        fetch_task.complete = 0 if answer["choices"] == "Incomplete" else 1
+        session.commit() 
+        self.print_task()
+        self.task_menu.loop()
 
     def change_task_description(self):
         self.print_task()

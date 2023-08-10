@@ -108,9 +108,9 @@ class Task(Base):
     __tablename__ = "tasks"
 
     id = Column(Integer(), primary_key = True)
-    list_id = mapped_column("list id", Integer(), ForeignKey("lists.id", ondelete="CASCADE"))
+    list_id = mapped_column("list id", Integer(), ForeignKey("lists.id", ondelete="CASCADE"), nullable=False)
     lists = relationship("List", back_populates="tasks")
-    categories = relationship("Category", secondary=join_table, back_populates="tasks")
+    categories = relationship("Category", secondary='join_table', back_populates="tasks")
     _description = mapped_column("description", String())
     complete = mapped_column("completed", Integer(), default=0)
 
@@ -126,8 +126,13 @@ class Task(Base):
             raise ValueError("Task description cannot be empty!")
 
     def __repr__(self):
-        return f"{self.id}: {self.description} " \
-        + f"{[cat.title for cat in self.categories]}"
+        task_table = TB(title = self.description)
+        task_table.add_column("id")
+        task_table.add_column("Category")
+        task_table.add_column("Status")
+        category_names = ', '.join([cat.title for cat in self.categories])
+        task_table.add_row(f"{self.id}", category_names, "Incomplete" if self.complete == 0 else "Complete")
+        return task_table
     
 class Category(Base):
 
