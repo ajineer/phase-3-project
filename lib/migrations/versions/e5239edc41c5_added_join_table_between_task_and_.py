@@ -1,8 +1,8 @@
-"""re-adding models again
+"""added join table between task and categories
 
-Revision ID: 9b972ba88c3b
-Revises: bf769ed22bd1
-Create Date: 2023-08-06 14:13:20.525155
+Revision ID: e5239edc41c5
+Revises: 
+Create Date: 2023-08-08 14:50:04.849207
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '9b972ba88c3b'
-down_revision: Union[str, None] = 'bf769ed22bd1'
+revision: str = 'e5239edc41c5'
+down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -37,6 +37,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('list id', sa.Integer(), nullable=True),
     sa.Column('description', sa.String(), nullable=True),
+    sa.Column('completed', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['list id'], ['lists.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
