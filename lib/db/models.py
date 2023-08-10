@@ -1,10 +1,16 @@
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import ForeignKey, Column, Integer, String
+from sqlalchemy import ForeignKey, Column, Integer, String, Table
 from sqlalchemy.orm import relationship, mapped_column
 from sqlalchemy.ext.hybrid import hybrid_property
-from rich.table import Table
+from rich.table import Table as TB
 
 Base = declarative_base()
+
+join_table = Table('join_table', 
+                   Base.metadata,
+                   Column('task_id', Integer(), ForeignKey('tasks.id')),
+                   Column('category_id', Integer(), ForeignKey('categories.id'))
+                   )
 
 class User(Base):
 
@@ -46,7 +52,7 @@ class User(Base):
 
     def __repr__(self):
          
-        user_table = Table(title = self.first_name)
+        user_table = TB(title = self.first_name)
         user_table.add_column("Lists")
         user_table.add_column("id")
 
@@ -85,13 +91,14 @@ class List(Base):
 
     def __repr__(self):
         
-        list_table = Table(title = self.name)
+        list_table = TB(title = self.name)
         list_table.add_column("id")
         list_table.add_column("Task")
         list_table.add_column("Status")
+        list_table.add_column("Categories")
         if self.tasks:
             for task in self.tasks:
-                list_table.add_row(f"{task.id}", task.description, "Complete" if task.complete == 1 else "Incomplete")
+                list_table.add_row(f"{task.id}", task.description, "Complete" if task.complete == 1 else "Incomplete", f"{[cat.title for cat in task.categories]}")
         else:
             list_table.add_row("n/a", "no tasks")
         return list_table
@@ -103,6 +110,7 @@ class Task(Base):
     id = Column(Integer(), primary_key = True)
     list_id = mapped_column("list id", Integer(), ForeignKey("lists.id", ondelete="CASCADE"))
     lists = relationship("List", back_populates="tasks")
+    categories = relationship("Category", secondary=join_table, back_populates="tasks")
     _description = mapped_column("description", String())
     complete = mapped_column("completed", Integer(), default=0)
 
@@ -114,16 +122,42 @@ class Task(Base):
     def description(self, description):
         if description and isinstance(description, str):
             self._description = description
+        else:
+            raise ValueError("Task description cannot be empty!")
 
     def __repr__(self):
-        return f"{self.id}: " \
-        +f" Description: {self.description}" \
-        +f" Status: {'complete' if self.complete == 1 else 'incomplete'}" 
+        return f"{self.id}: {self.description} " \
+        + f"{[cat.title for cat in self.categories]}"
+    
+class Category(Base):
+
+    __tablename__ = "categories"
+    
+    id = Column(Integer(), primary_key = True)
+    _title = Column(String(), nullable=False)
+    tasks = relationship("Task", secondary=join_table, back_populates="categories")
+
+    @hybrid_property
+    def title(self):
+        return self._title
+    
+    @title.setter
+    def title(self, new_title):
+        if new_title and isinstance(new_title, str):
+            self._title = new_title
+        else:
+            raise ValueError("Category can't be empty!")
+    
+    def __repr__(self):
+        return f"{self.id}: {self.title}"
+
+
 
 class Menu:
 
-    def __init__(self, dictionary):
-
+    def __init__(self, dictionary, return_function = None):
+    
+        self.return_function = return_function
         self.dictionary = dictionary
         self.choice = 0
         self.endBound = int(len(self.dictionary)) + 1
@@ -132,8 +166,10 @@ class Menu:
         if(index == 1):
             print(f"\033[33m{'='*6*len(self.dictionary)}\033[0m")
         print(f"\033[33m{index}:\033[0m {self.dictionary[index].__name__}")
+
         if(index == len(self.dictionary)):
             print(f"\033[33m{self.endBound}:\033[0m Exit")
+            
             print(f"\033[33m{'='*6*len(self.dictionary)}\033[0m")
             pass
         else:
@@ -141,6 +177,7 @@ class Menu:
         
     def loop(self):
         self.display()
+
         try:
             print(f"\033[34m<{'-'*5*len(self.dictionary)}>\033[0m")
             choice = int(input("Enter choice: "))
@@ -150,12 +187,16 @@ class Menu:
                 return self.loop()
             else:
                 if(choice == self.endBound):
+                    if callable(self.return_function):
+                        self.return_function()
                     pass
                 else:
                     print(f"\033[32m<{'-'*5*len(self.dictionary)}>\033[0m")
                     self.dictionary[choice]()
                     print(f"\033[32m<{'-'*5*len(self.dictionary)}>\033[0m")
                     return self.loop()
+                
         except ValueError:
             print("You did not enter an integer value.")
             return self.loop()
+
