@@ -199,7 +199,7 @@ class app:
 
             print("Category can't be empty!")
         
-        self.list_loop()
+        self.user_loop()
 
 
     def make_task(self):
@@ -295,7 +295,7 @@ class app:
         for task in tasks:
             task_table.add_row(f"{task.id}", answer["choices"], task.description)
         self.print_console(task_table)
-        self.task_loop()
+        self.list_loop()
 
 if __name__ == '__main__':
 
