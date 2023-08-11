@@ -24,7 +24,9 @@ class Menu:
 
     def loop(self):
         Menu.currentIndex = Menu.all.index(self)
+        print(f"\n{33*'='}")
         answers = inquirer.prompt(self.questions)
+        print(f"{33*'='}\n")
         self.menu_dict.get(answers['functions'])()
         
 class app:
@@ -89,6 +91,7 @@ class app:
     def print_console(self, table):
         
         console = Console()
+        print('\n')
         console.print(table)
 
     def exit(self):
