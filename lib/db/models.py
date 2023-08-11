@@ -98,7 +98,7 @@ class List(Base):
         list_table.add_column("Categories")
         if self.tasks:
             for task in self.tasks:
-                list_table.add_row(f"{task.id}", task.description, "Complete" if task.complete == 1 else "Incomplete", f"{[cat.title for cat in task.categories]}")
+                list_table.add_row(f"{task.id}", task.description, "Complete" if task.complete == 1 else "Incomplete", ', '.join([cat.title for cat in task.categories]))
         else:
             list_table.add_row("n/a", "no tasks")
         return list_table
