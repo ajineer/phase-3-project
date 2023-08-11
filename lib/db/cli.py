@@ -4,6 +4,7 @@ from models import (User, List, Task, Category)
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from rich.console import Console
+from rich.table import Table as TB
 import inquirer
 
 
@@ -39,10 +40,30 @@ class app:
 
     def create_menus(self):
 
-        self.main_menu = Menu({self.make_user.__name__: self.make_user, self.fetch_user.__name__: self.fetch_user, self.delete_user.__name__: self.delete_user, self.back.__name__: self.back})
-        self.user_menu = Menu({self.select_list.__name__: self.select_list, self.make_list.__name__: self.make_list, self.delete_list.__name__:self.delete_list, self.make_category.__name__:self.make_category, self.back.__name__: self.back})
-        self.list_menu = Menu({self.select_task.__name__: self.select_task, self.make_task.__name__: self.make_task, self.delete_task.__name__: self.delete_task, self.back.__name__: self.back})
-        self.task_menu = Menu({self.change_status.__name__: self.change_status, self.change_task_description.__name__: self.change_task_description, self.back.__name__: self.back})
+        self.main_menu = Menu({
+            self.make_user.__name__: self.make_user, 
+            self.fetch_user.__name__: self.fetch_user, 
+            self.delete_user.__name__: self.delete_user, 
+            self.back.__name__: self.back})
+        
+        self.user_menu = Menu(
+            {self.select_list.__name__: self.select_list, 
+             self.make_list.__name__: self.make_list, 
+             self.delete_list.__name__:self.delete_list, 
+             self.make_category.__name__:self.make_category, 
+             self.back.__name__: self.back})
+        
+        self.list_menu = Menu({
+            self.select_task.__name__: self.select_task, 
+            self.make_task.__name__: self.make_task, 
+            self.delete_task.__name__: self.delete_task, 
+            self.back.__name__: self.back, 
+            self.show_by_category.__name__: self.show_by_category})
+        
+        self.task_menu = Menu({
+            self.change_status.__name__: self.change_status, 
+            self.change_task_description.__name__: self.change_task_description, 
+            self.back.__name__: self.back})
 
     def run_app(self):
 
@@ -153,8 +174,7 @@ class app:
             cat_list = [inquirer.Checkbox("Categories", message="Select Category", choices = [cat.title for cat in categories])]
             answers = inquirer.prompt(cat_list)
             self.selected_category = answers["Categories"]
-            print(answers["Categories"])
-            new_task.categories = session.query(Category).filter(Category.title in answers["Categories"]).all()
+            new_task.categories = session.query(Category).filter(Category.title.in_(answers["Categories"])).all()
             session.add(new_task)
             session.commit()
 
@@ -225,6 +245,20 @@ class app:
         session.commit()
         self.selected_task = session.query(Task).filter(Task.id == self.selected_task.id).first()
         self.print_task()
+        self.task_menu.loop()
+
+    def show_by_category(self):
+        choices = [inquirer.List("choices", message="Select a Category", choices=[cat.title for cat in session.query(Category).all()])]
+        answer = inquirer.prompt(choices)
+        tasks = session.query(Task).filter(Task.list_id == self.selected_list.id and Task.categories.in_(answer["choices"]))
+        console = Console()
+        task_table = TB(title = "Task by Category")
+        task_table.add_column("id")
+        task_table.add_column("Category")
+        task_table.add_column("Task")
+        for task in tasks:
+            task_table.add_row(f"{task.id}", answer["choices"], task.description)
+        console.print(task_table)
         self.task_menu.loop()
 
 if __name__ == '__main__':
