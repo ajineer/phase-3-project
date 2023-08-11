@@ -55,8 +55,8 @@ class app:
             self.select_task.__name__: self.select_task, 
             self.make_task.__name__: self.make_task, 
             self.delete_task.__name__: self.delete_task, 
-            self.back.__name__: self.back, 
-            self.show_by_category.__name__: self.show_by_category})
+            self.show_by_category.__name__: self.show_by_category,
+            self.back.__name__: self.back})
         
         self.task_menu = Menu({
             self.change_status.__name__: self.change_status, 
@@ -86,14 +86,13 @@ class app:
     
         return_functions.get(Menu.currentIndex)()
         
-
     def print_console(self, table):
         
         console = Console()
         console.print(table)
 
     def exit(self):
-        
+
         return 1
     
     def main_loop(self):
@@ -147,7 +146,7 @@ class app:
 
     def select_task(self):
 
-        self.print_console(self.selected_user.__repr__())
+        self.print_console(self.selected_list.__repr__())
 
         task_description = input("Select Task: ")
         self.selected_task = session.query(Task).filter(Task.description == task_description).first()
@@ -235,7 +234,7 @@ class app:
 
             print("Invalid name or id.")
         
-        self.user_menu.loop()
+        self.main_loop()
 
     def delete_list(self):
 
